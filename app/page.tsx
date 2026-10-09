@@ -1,0 +1,72 @@
+"use client";
+
+import { useMemo, useRef, useState } from "react";
+import { Activity, ArrowDown, ArrowUp, ArrowUpRight, BarChart3, Bookmark, BrainCircuit, Check, CircleHelp, Clock3, Eye, Heart, Info, MessageCircle, Play, RotateCcw, Send, Sparkles, SlidersHorizontal, TrendingUp, X, Zap } from "lucide-react";
+import { initialInterests, posts } from "../data/posts";
+import { calculateFeed, categoryColor, INTERACTION_WEIGHTS, registerInteraction, SCORE_WEIGHTS, signalWeight } from "../lib/algorithm";
+import { CATEGORIES, Category, InteractionType, ScoredPost, UserInterests } from "../types";
+
+const actions: { type: InteractionType; label: string; icon: typeof Heart }[] = [
+  { type: "watch", label: "Assistir", icon: Play }, { type: "like", label: "Curtir", icon: Heart }, { type: "save", label: "Salvar", icon: Bookmark }, { type: "share", label: "Enviar", icon: Send }, { type: "comment", label: "Comentar", icon: MessageCircle }, { type: "ignore", label: "Ignorar", icon: X },
+];
+
+export default function Home() {
+  const [interests, setInterests] = useState<UserInterests>(initialInterests);
+  const [interactions, setInteractions] = useState<Record<string, InteractionType[]>>({});
+  const interactionsRef = useRef<Record<string, InteractionType[]>>({});
+  const [activity, setActivity] = useState<{ label: string; type: InteractionType; time: string; weight: number }[]>([]);
+  const [selected, setSelected] = useState<ScoredPost | null>(null);
+  const [filter, setFilter] = useState<"Todos" | Category>("Todos");
+  const [demo, setDemo] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
+  const feed = useMemo(() => calculateFeed(posts, interests, interactions), [interests, interactions]);
+  const initialFeed = useMemo(() => calculateFeed(posts, initialInterests), []);
+  const initialRanks = Object.fromEntries(initialFeed.map((post, index) => [post.id, index + 1]));
+  const filteredFeed = filter === "Todos" ? feed : feed.filter((post) => post.category === filter);
+  const signalCount = Object.values(interactions).reduce((total, values) => total + values.length, 0);
+  const topInterest = Object.entries(interests).sort(([, a], [, b]) => b - a)[0];
+  const maxInterest = Math.max(...Object.values(interests));
+
+  function interact(post: Post, type: InteractionType) {
+    const currentPostSignals = interactionsRef.current[post.id] || [];
+    const existingIndex = currentPostSignals.lastIndexOf(type);
+    const isRemoving = existingIndex !== -1;
+    const previousCount = currentPostSignals.filter((item) => item === type).length;
+    const effectiveCount = isRemoving ? previousCount - 1 : previousCount;
+    const nextPostSignals = isRemoving
+      ? currentPostSignals.filter((_, index) => index !== existingIndex)
+      : [...currentPostSignals, type];
+    const nextInteractions = { ...interactionsRef.current, [post.id]: nextPostSignals };
+    interactionsRef.current = nextInteractions;
+    setInterests((current) => registerInteraction(current, post, type, effectiveCount, isRemoving ? -1 : 1));
+    setInteractions(nextInteractions);
+    const labels: Record<InteractionType, string> = { view: "visualizou", watch: `assistiu por ${post.duration} min`, like: "curtiu", save: "salvou", share: "compartilhou", comment: "comentou", ignore: "ignorou" };
+    const actionLabel = isRemoving ? `desfez: ${labels[type]}` : labels[type];
+    const actionWeight = signalWeight(type, effectiveCount) * (isRemoving ? -1 : 1);
+    setActivity((current) => [{ label: `${actionLabel} “${post.title}”`, type, time: "agora", weight: actionWeight }, ...current].slice(0, 4));
+  }
+
+  function simulateDemo() {
+    setDemo(true); setDemoStep(1); setInterests(initialInterests); interactionsRef.current = {}; setInteractions({}); setActivity([]);
+    const sequence: [string, InteractionType][] = [["p1", "like"], ["p8", "like"], ["p1", "save"], ["p2", "save"], ["p4", "ignore"]];
+    sequence.forEach(([id, type], index) => setTimeout(() => { const post = posts.find((item) => item.id === id); if (post) { interact(post, type); setDemoStep(index + 2); } }, 550 * (index + 1)));
+    setTimeout(() => setDemo(false), 550 * (sequence.length + 1));
+  }
+
+  function reset() { setInterests(initialInterests); interactionsRef.current = {}; setInteractions({}); setActivity([]); setDemo(false); setDemoStep(0); setFilter("Todos"); }
+
+  return <main className="app-shell">
+    <header className="topbar"><div className="brand"><span className="brand-mark"><Sparkles size={16} /></span><span>SINAL</span><small>LABORATÓRIO DE RECOMENDAÇÕES</small></div><div className="topbar-meta"><span className="live-pill"><i /> ambiente local</span><button className="icon-button" title="Ajuda"><CircleHelp size={17} /></button><button className="reset-button" onClick={reset}><RotateCcw size={14} /> Resetar</button><button className="demo-button" onClick={simulateDemo} disabled={demo}><Play size={14} fill="currentColor" /> {demo ? "Rodando demonstração" : "Modo demonstração"}</button></div></header>
+    <section className="hero-section"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-line" /> EXPERIMENTO 01 · PERSONALIZAÇÃO</div><h1>O seu feed aprende<br /><em>com cada escolha.</em></h1><p>Uma rede social simulada para observar como sinais de comportamento viram interesses estimados e recomendações personalizadas.</p><div className="hero-chips"><span><Zap size={13} /> estado em tempo real</span><span><BrainCircuit size={13} /> lógica transparente</span></div></div><div className="hero-diagram"><div className="diagram-orbit orbit-one" /><div className="diagram-orbit orbit-two" /><div className="diagram-core"><Sparkles size={30} /><span>seu<br />sinal</span></div><span className="diagram-label label-one">comportamento</span><span className="diagram-label label-two">score</span></div></section>
+    <section className="metric-strip"><div className="metric"><span className="metric-icon purple"><Activity size={16} /></span><div><small>SINAIS REGISTRADOS</small><strong>{signalCount.toString().padStart(2, "0")}</strong></div></div><div className="metric"><span className="metric-icon teal"><TrendingUp size={16} /></span><div><small>TEMA DOMINANTE</small><strong>{topInterest?.[0]}</strong><em>{topInterest?.[1]}/100</em></div></div><div className="metric"><span className="metric-icon orange"><BarChart3 size={16} /></span><div><small>POST MAIS RELEVANTE</small><strong>{feed[0]?.score.toFixed(1)} pts</strong><em>{feed[0]?.category}</em></div></div><div className="metric metric-note"><Info size={15} /><span>O modelo combina interesse, comportamento, recência e diversidade. Tudo é calculado localmente.</span></div></section>
+    {demo && <div className="demo-banner"><span className="demo-pulse" /><strong>Modo demonstração</strong><span>{demoStep <= 1 ? "Preparando sinais..." : demoStep <= 4 ? "Programação ganhou relevância..." : "O feed está aprendendo com você..."}</span><b>etapa {Math.min(demoStep, 6)} / 6</b></div>}
+    <section className="workspace"><div className="feed-area"><div className="section-heading"><div><div className="eyebrow">FEED PERSONALIZADO</div><h2>Para você <ArrowUpRight size={19} /></h2></div><span className="updated"><i /> atualizado agora</span></div><div className="category-tabs"><button className={filter === "Todos" ? "selected" : ""} onClick={() => setFilter("Todos")}>Todos <b>{posts.length}</b></button>{CATEGORIES.map((category) => <button className={filter === category ? "selected" : ""} key={category} onClick={() => setFilter(category)}>{category}</button>)}</div><div className="feed-grid">{filteredFeed.map((post, index) => { const globalIndex = feed.findIndex((item) => item.id === post.id); const delta = (initialRanks[post.id] || index + 1) - (globalIndex + 1); return <article className="post-card" key={post.id}><div className="post-header"><div className="author"><span className="avatar">{post.initials}</span><div><strong>{post.author}</strong><small>há {index + 1} h <span>·</span> <b style={{ color: categoryColor(post.category) }}>{post.category}</b></small></div></div><div className="rank-badge">#{index + 1}<small>posição</small>{delta > 0 && <em><ArrowUp size={10} /> {delta}</em>}{delta < 0 && <em className="down"><ArrowDown size={10} /> {Math.abs(delta)}</em>}</div></div><div className="post-visual" style={{ background: post.gradient }}><span className="visual-icon">{post.icon}</span><span className="visual-grid" /><span className="visual-caption">SINAL / {post.category.toUpperCase()}</span><button className="score-tag" onClick={() => setSelected(post)}><Sparkles size={11} /> {post.score.toFixed(1)} score</button></div><h3>{post.title}</h3><p>{post.description}</p><div className="post-meta"><span>{post.format}</span><span>{post.duration} min</span><span>{post.tags.slice(0, 2).join(" · ")}</span></div><div className="post-actions">{actions.map(({ type, label, icon: Icon }) => <button key={type} className={interactions[post.id]?.includes(type) ? "active" : ""} onClick={() => interact(post, type)}><Icon size={14} /> {label}</button>)}<button className="view-action" onClick={() => interact(post, "view")}><Eye size={14} /> Ver</button></div><button className="why-link" onClick={() => setSelected(post)}>ver cálculo da recomendação <ArrowUpRight size={13} /></button></article>; })}</div>{filteredFeed.length === 0 && <div className="empty-state"><SlidersHorizontal size={24} /><strong>Nenhum post nesta categoria ainda</strong><button onClick={() => setFilter("Todos")}>mostrar todos</button></div>}</div>
+      <aside className="insights-column"><section className="dark-panel interests-panel"><div className="panel-heading"><div><div className="eyebrow light">SINAIS DO USUÁRIO <span className="live-dot" /></div><h2>Como o algoritmo<br /><em>está pensando</em></h2></div><span className="panel-menu"><SlidersHorizontal size={15} /></span></div><p className="panel-lead">Seu interesse muda a cada interação. Quanto maior a barra, mais peso esse tema tem nas recomendações.</p><div className="interest-list">{Object.entries(interests).sort(([, a], [, b]) => b - a).map(([category, value]) => <div className="interest-row" key={category}><div><span>{category}</span><b>{value}</b></div><div className="interest-track"><span style={{ width: `${(value / Math.max(maxInterest, 1)) * 100}%`, background: categoryColor(category as Category) }} /></div></div>)}</div><div className="panel-callout"><TrendingUp size={16} /><div><strong>{signalCount ? "O feed já está respondendo" : "Gere seu primeiro sinal"}</strong><p>{signalCount ? `Você influenciou ${signalCount} recomendação${signalCount > 1 ? "ões" : ""}.` : "Curta, salve ou ignore um post para começar."}</p></div></div></section>
+        <section className="activity-panel"><div className="section-heading compact"><div><div className="eyebrow">HISTÓRICO AO VIVO</div><h3>Seus sinais recentes</h3></div><Activity size={16} /></div>{activity.length === 0 ? <div className="activity-empty"><Clock3 size={17} /><span>Suas ações aparecerão aqui.</span></div> : <div className="activity-list">{activity.map((item, index) => <div className="activity-item" key={`${item.label}-${index}`}><span className={`activity-icon ${item.type}`}><Check size={13} /></span><div><strong>{item.label}</strong><small>{item.time} · peso {item.weight > 0 ? "+" : ""}{item.weight} {item.weight !== INTERACTION_WEIGHTS[item.type] && "(sinal repetido tem menos peso)"}</small></div></div>)}</div>}</section>
+        <section className="flow-panel"><div className="section-heading compact"><div><div className="eyebrow">POR DENTRO DO SINAL</div><h3>Do clique ao feed</h3></div><GitBranchIcon /></div><div className="flow-steps">{[["01", "Interação", "você escolhe"], ["02", "Peso", "cada ação importa"], ["03", "Interesse", "seu perfil muda"], ["04", "Score", "posts pontuam"], ["05", "Exploração", "o sistema testa novidades"], ["06", "Ordenação", "o feed responde"]].map(([number, title, sub], index) => <div className="flow-step" key={number}><span>{number}</span><div><strong>{title}</strong><small>{sub}</small></div>{index < 5 && <b>↓</b>}</div>)}</div></section></aside></section>
+    <footer><div><span className="footer-mark"><Sparkles size={13} /></span><strong>SINAL</strong> · protótipo educacional de recomendação</div><p>Este modelo é propositalmente simplificado. Plataformas reais utilizam grandes volumes de dados, machine learning e muitos outros sinais.</p></footer>
+    {selected && <div className="modal-backdrop" onClick={() => setSelected(null)}><div className="score-modal" onClick={(event) => event.stopPropagation()}><button className="close-modal" onClick={() => setSelected(null)}><X size={19} /></button><div className="eyebrow">EXPLICAÇÃO DO SCORE</div><h2>Por que este post apareceu?</h2><div className="modal-post"><span style={{ background: selected.gradient }}>{selected.icon}</span><div><strong>{selected.title}</strong><small>{selected.category} · {selected.author} · {selected.format}</small></div></div><div className="breakdown">{[["Interesse do usuário", selected.breakdown.interest, SCORE_WEIGHTS.interest], ["Seu comportamento", selected.breakdown.behavior, SCORE_WEIGHTS.behavior], ["Recência", selected.breakdown.recency, SCORE_WEIGHTS.recency], ["Popularidade", selected.breakdown.popularity, SCORE_WEIGHTS.popularity], ["Engajamento", selected.breakdown.engagement, SCORE_WEIGHTS.engagement]].map(([label, value, weight]) => <div className="breakdown-row" key={label as string}><span>{label}</span><b>{Number(value).toFixed(0)}/100</b><small>{(Number(value) * Number(weight)).toFixed(2)}</small></div>)}</div><div className="reason-list">{selected.reasons.map((reason) => <span key={reason}>• {reason}</span>)}</div><div className="formula"><span>score =</span> interesse × 0.45 + comportamento × 0.15<br /><i>+ recência × 0.15 + popularidade × 0.10 + engajamento × 0.10 + exploração × 0.05</i></div><div className="final-score"><span>score final</span><strong>{selected.score.toFixed(2)}</strong></div><p className="modal-note"><Info size={13} /> O algoritmo não “sabe” o que você gosta: ele combina sinais, reduz o peso de repetições e reserva espaço para descobrir conteúdos novos.</p></div></div>}
+  </main>;
+}
+
+function GitBranchIcon() { return <svg className="branch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="6" cy="5" r="2" /><circle cx="18" cy="19" r="2" /><path d="M6 7v5a7 7 0 0 0 7 7h3M18 17v-5a7 7 0 0 0-7-7H8" /></svg>; }

@@ -1,0 +1,16 @@
+import { Post, UserInterests } from "../types";
+
+export const posts: Post[] = [
+  { id: "p1", title: "O que acontece quando você abre um site?", description: "Uma viagem visual pelo caminho entre o navegador e o servidor.", category: "Programação", author: "Nina Costa", initials: "NC", gradient: "linear-gradient(135deg,#5b48e6,#9d7aff)", icon: "</>", recency: 92, popularity: 68, engagement: 78, format: "vídeo", duration: 6, tags: ["web", "internet", "servidor"] },
+  { id: "p2", title: "A internet invisível que mora no seu bolso", description: "Como sensores e pequenos sinais transformam objetos em experiências.", category: "Tecnologia", author: "Caio Lima", initials: "CL", gradient: "linear-gradient(135deg,#0d9c91,#57d6bb)", icon: "⌁", recency: 74, popularity: 84, engagement: 73, format: "carrossel", duration: 3, tags: ["celular", "sensores", "internet"] },
+  { id: "p3", title: "Por que este jogo parece tão difícil?", description: "Design, feedback e a ciência por trás do desafio perfeito.", category: "Jogos", author: "Bia Mori", initials: "BM", gradient: "linear-gradient(135deg,#e85c85,#ffae7a)", icon: "✦", recency: 81, popularity: 76, engagement: 81, format: "vídeo", duration: 9, tags: ["design", "desafio", "feedback"] },
+  { id: "p4", title: "A matemática por trás do último passe", description: "Dados que ajudam a contar uma partida de um jeito diferente.", category: "Futebol", author: "Rafa Torres", initials: "RT", gradient: "linear-gradient(135deg,#16865d,#93d65a)", icon: "◒", recency: 66, popularity: 88, engagement: 91, format: "vídeo", duration: 5, tags: ["dados", "futebol", "tática"] },
+  { id: "p5", title: "Como uma música vira memória?", description: "O encontro entre ritmo, emoção e as lembranças que ficam.", category: "Música", author: "Lia Nunes", initials: "LN", gradient: "linear-gradient(135deg,#e58c31,#ffd46c)", icon: "♫", recency: 58, popularity: 65, engagement: 70, format: "texto", duration: 4, tags: ["ritmo", "memória", "emoção"] },
+  { id: "p6", title: "O mapa secreto das estrelas", description: "Uma introdução leve às histórias que a luz conta sobre o universo.", category: "Ciência", author: "Ivo Reis", initials: "IR", gradient: "linear-gradient(135deg,#273c82,#6e89e8)", icon: "✧", recency: 87, popularity: 61, engagement: 66, format: "carrossel", duration: 4, tags: ["espaço", "universo", "luz"] },
+  { id: "p7", title: "O roteiro de uma cena inesquecível", description: "Pequenas escolhas que fazem uma história ganhar vida na tela.", category: "Entretenimento", author: "Maya Luz", initials: "ML", gradient: "linear-gradient(135deg,#b04ea5,#f39ac4)", icon: "◉", recency: 70, popularity: 79, engagement: 75, format: "texto", duration: 5, tags: ["cinema", "roteiro", "história"] },
+  { id: "p8", title: "Seu primeiro projeto com JavaScript", description: "Uma ideia simples para começar a criar e testar no navegador.", category: "Programação", author: "Gui Alves", initials: "GA", gradient: "linear-gradient(135deg,#4056c7,#62b5e8)", icon: "{ }", recency: 79, popularity: 72, engagement: 83, format: "vídeo", duration: 12, tags: ["javascript", "web", "projeto"] },
+];
+
+export const initialInterests: UserInterests = {
+  "Programação": 42, "Tecnologia": 34, "Jogos": 29, "Futebol": 30, "Música": 24, "Ciência": 38, "Entretenimento": 31,
+};
