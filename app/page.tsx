@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Activity, ArrowDown, ArrowUp, ArrowUpRight, BarChart3, Bookmark, BrainCircuit, Check, CircleHelp, Clock3, Eye, Heart, Info, MessageCircle, Play, RotateCcw, Send, Sparkles, SlidersHorizontal, TrendingUp, X, Zap } from "lucide-react";
 import { initialInterests, posts } from "../data/posts";
 import { calculateFeed, categoryColor, INTERACTION_WEIGHTS, registerInteraction, SCORE_WEIGHTS, signalWeight } from "../lib/algorithm";
-import { CATEGORIES, Category, InteractionType, ScoredPost, UserInterests } from "../types";
+import { CATEGORIES, Category, InteractionType, Post, ScoredPost, UserInterests } from "../types";
 
 const actions: { type: InteractionType; label: string; icon: typeof Heart }[] = [
   { type: "watch", label: "Assistir", icon: Play }, { type: "like", label: "Curtir", icon: Heart }, { type: "save", label: "Salvar", icon: Bookmark }, { type: "share", label: "Enviar", icon: Send }, { type: "comment", label: "Comentar", icon: MessageCircle }, { type: "ignore", label: "Ignorar", icon: X },
